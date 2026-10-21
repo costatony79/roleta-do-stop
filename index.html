@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Roleta do Stop</title>
+<meta name="description" content="Duas roletas, uma de letras e outra de categorias, com 10 segundos para responder. Para brincar de Stop (adedonha) na sala de aula.">
+<style>
+  /* Layout: título no topo; as duas roletas lado a lado com o resultado no meio;
+     botão de girar embaixo. Tudo cabe na altura da tela (projetor ou lousa). */
+  :root {
+    --fundo: #1b1440;
+    --fundo2: #2a1f63;
+    --painel: rgba(255,255,255,.08);
+    --texto: #fff8ec;
+    --suave: #cfc5ff;
+    --sol: #ffc93c;
+    --coral: #ff6b6b;
+    --menta: #3ddc97;
+    --raio: 14px;
+    --roleta: min(38vw, calc(100vh - 290px), 520px);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    min-height: 100vh;
+    background: radial-gradient(circle at 50% -10%, var(--fundo2), var(--fundo) 65%);
+    color: var(--texto);
+    font: 16px/1.4 "Segoe UI", system-ui, -apple-system, Roboto, sans-serif;
+    padding: 10px 16px 14px;
+  }
+  .pagina { max-width: 1280px; margin: 0 auto; display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; }
+  header { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 4px 16px; }
+  h1 { margin: 0; font-size: clamp(1.5rem, 3.4vw, 2.3rem); font-weight: 900; letter-spacing: .01em; }
+  h1 span { color: var(--sol); }
+  header p { margin: 0; color: var(--suave); font-size: .95rem; }
+
+  /* Roletas */
+  .mesa { display: grid; grid-template-columns: auto minmax(220px, 1fr) auto; align-items: center; justify-items: center; gap: 16px; }
+  .roleta { position: relative; width: var(--roleta); display: grid; gap: 6px; justify-items: center; }
+  .roleta h2 { margin: 0; font-size: 1rem; text-transform: uppercase; letter-spacing: .12em; color: var(--suave); }
+  .roda { position: relative; width: var(--roleta); aspect-ratio: 1; }
+  .roda canvas { width: 100%; height: 100%; display: block; filter: drop-shadow(0 10px 24px rgba(0,0,0,.45)); }
+  .ponteiro {
+    position: absolute; left: 50%; top: -14px; transform: translateX(-50%);
+    width: 0; height: 0; border-left: 14px solid transparent; border-right: 14px solid transparent;
+    border-top: 24px solid var(--sol); filter: drop-shadow(0 3px 3px rgba(0,0,0,.4)); z-index: 2;
+  }
+
+  /* Resultado e cronômetro */
+  .resultado {
+    width: 100%; max-width: 360px; background: var(--painel); border: 2px solid rgba(255,255,255,.12);
+    border-radius: var(--raio); padding: 16px; text-align: center; display: grid; gap: 10px;
+  }
+  .rotulo { font-size: .8rem; text-transform: uppercase; letter-spacing: .14em; color: var(--suave); }
+  .letra-sorteada { font-size: clamp(4rem, 9vw, 7rem); font-weight: 900; line-height: .95; color: var(--sol); }
+  .categoria-sorteada { font-size: clamp(1.4rem, 2.6vw, 2.1rem); font-weight: 800; line-height: 1.1; }
+  .categoria-descricao { color: var(--suave); font-size: 1rem; min-height: 1.4em; }
+  .cronometro { position: relative; width: 120px; height: 120px; margin: 4px auto 0; }
+  .cronometro svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+  .cronometro circle { fill: none; stroke-width: 10; }
+  .cronometro .trilha { stroke: rgba(255,255,255,.12); }
+  .cronometro .barra { stroke: var(--menta); stroke-linecap: round; transition: stroke .3s; }
+  .cronometro .numero {
+    position: absolute; inset: 0; display: grid; place-items: center;
+    font-size: 2.8rem; font-weight: 900; font-variant-numeric: tabular-nums;
+  }
+  .cronometro.alerta .barra { stroke: var(--coral); }
+  .cronometro.alerta .numero { color: var(--coral); animation: pulso .5s ease-in-out infinite alternate; }
+  .mensagem { font-size: 1.05rem; font-weight: 700; min-height: 1.4em; }
+  .mensagem.tempo { color: var(--coral); font-size: 2rem; letter-spacing: .06em; }
+  @keyframes pulso { from { transform: scale(1); } to { transform: scale(1.12); } }
+
+  /* Controles */
+  .controles { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 10px; }
+  button {
+    font: inherit; font-weight: 800; border: 0; border-radius: 999px; cursor: pointer; color: #2b1d00;
+    background: var(--sol); padding: 10px 22px;
+  }
+  button.girar { font-size: 1.4rem; padding: 14px 44px; box-shadow: 0 6px 0 #c9921a, 0 10px 24px rgba(0,0,0,.35); }
+  button.girar:active:not(:disabled) { transform: translateY(4px); box-shadow: 0 2px 0 #c9921a; }
+  button.secundario { background: rgba(255,255,255,.12); color: var(--texto); font-weight: 700; }
+  button:disabled { opacity: .5; cursor: not-allowed; }
+  button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-visible, summary:focus-visible { outline: 3px solid #fff; outline-offset: 3px; }
+  .historico { color: var(--suave); font-size: .9rem; text-align: center; min-height: 1.3em; }
+  .historico b { color: var(--texto); }
+
+  /* Configurações */
+  details.config { background: var(--painel); border-radius: var(--raio); padding: 6px 16px; }
+  details.config summary { cursor: pointer; font-weight: 700; padding: 4px 0; }
+  .config-grade { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr)); gap: 16px; padding: 10px 0 8px; }
+  .config-grade h3 { margin: 0 0 6px; font-size: 1rem; }
+  .config-grade p { margin: 0 0 8px; color: var(--suave); font-size: .85rem; }
+  textarea, select, input[type="number"] {
+    font: inherit; color: var(--texto); background: rgba(0,0,0,.25); border: 1px solid rgba(255,255,255,.2);
+    border-radius: 8px; padding: 8px 10px; width: 100%;
+  }
+  textarea { min-height: 11rem; resize: vertical; line-height: 1.45; }
+  .letras { display: grid; grid-template-columns: repeat(auto-fill, minmax(38px, 1fr)); gap: 5px; margin-bottom: 8px; }
+  .letras label { position: relative; }
+  .letras input { position: absolute; opacity: 0; inset: 0; margin: 0; cursor: pointer; }
+  .letras span {
+    display: grid; place-items: center; height: 36px; border-radius: 8px; font-weight: 800;
+    background: rgba(255,255,255,.08); color: rgba(255,255,255,.45); text-decoration: line-through; cursor: pointer;
+  }
+  .letras input:checked + span { background: var(--sol); color: #2b1d00; text-decoration: none; }
+  .letras input:focus-visible + span { outline: 3px solid #fff; outline-offset: 2px; }
+  .linha { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .linha label { display: flex; align-items: center; gap: 8px; }
+  .linha input[type="number"] { width: 5.5em; }
+  .linha input[type="checkbox"] { width: 20px; height: 20px; accent-color: var(--sol); }
+
+  @media (max-width: 900px) {
+    :root { --roleta: min(44vw, 340px); }
+    .mesa { grid-template-columns: 1fr 1fr; }
+    .resultado { grid-column: 1 / -1; grid-row: 2; max-width: 520px; }
+  }
+  @media (max-width: 520px) {
+    :root { --roleta: min(42vw, 200px); }
+    header p { display: none; }
+    .resultado { padding: 10px; gap: 6px; }
+    .cronometro { width: 88px; height: 88px; }
+    .cronometro .numero { font-size: 2.1rem; }
+    .pagina { gap: 8px; }
+    .letra-sorteada { font-size: 4rem; }
+    button.girar { font-size: 1.2rem; padding: 12px 34px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .cronometro.alerta .numero { animation: none; }
+  }
+</style>
+</head>
+<body>
+<div class="pagina">
+  <header>
+    <h1>Roleta do <span>Stop</span></h1>
+    <p>Gire as roletas e diga algo da categoria com a letra sorteada antes de o tempo acabar.</p>
+  </header>
+
+  <main class="mesa">
+    <section class="roleta" aria-label="Roleta de letras">
+      <h2>Letra</h2>
+      <div class="roda"><div class="ponteiro" aria-hidden="true"></div><canvas id="roda-letras" width="600" height="600"></canvas></div>
+    </section>
+
+    <section class="resultado" aria-live="polite">
+      <div>
+        <div class="rotulo">Letra</div>
+        <div class="letra-sorteada" id="letra">?</div>
+      </div>
+      <div>
+        <div class="rotulo">Categoria</div>
+        <div class="categoria-sorteada" id="categoria">Clique em Girar</div>
+        <div class="categoria-descricao" id="descricao"></div>
+      </div>
+      <div class="cronometro" id="cronometro" aria-label="Tempo restante">
+        <svg viewBox="0 0 120 120" aria-hidden="true">
+          <circle class="trilha" cx="60" cy="60" r="52"></circle>
+          <circle class="barra" id="barra" cx="60" cy="60" r="52" stroke-dasharray="326.7" stroke-dashoffset="0"></circle>
+        </svg>
+        <div class="numero" id="segundos">10</div>
+      </div>
+      <div class="mensagem" id="mensagem"></div>
+    </section>
+
+    <section class="roleta" aria-label="Roleta de categorias">
+      <h2>Categoria</h2>
+      <div class="roda"><div class="ponteiro" aria-hidden="true"></div><canvas id="roda-categorias" width="600" height="600"></canvas></div>
+    </section>
+  </main>
+
+  <div class="controles">
+    <button type="button" class="girar" id="girar">Girar</button>
+    <button type="button" class="secundario" id="parar" hidden>Parar o tempo</button>
+    <button type="button" class="secundario" id="som" aria-pressed="true">Som: ligado</button>
+  </div>
+  <div class="historico" id="historico"></div>
+
+  <details class="config" id="config">
+    <summary>Configurar roletas</summary>
+    <div class="config-grade">
+      <div>
+        <h3>Categorias</h3>
+        <p>Uma por linha. Para usar uma sigla na roleta, escreva a sigla, um sinal de igual e o que ela significa. Exemplo: <b>FLV = Fruta, legume ou verdura</b>.</p>
+        <textarea id="categorias" spellcheck="false"></textarea>
+      </div>
+      <div>
+        <h3>Letras</h3>
+        <p>Clique numa letra para tirá-la ou devolvê-la à roleta.</p>
+        <div class="letras" id="letras"></div>
+        <div class="linha">
+          <button type="button" class="secundario" id="tirar-dificeis">Tirar K, W, X e Y</button>
+          <button type="button" class="secundario" id="todas-letras">Usar todas</button>
+        </div>
+        <h3 style="margin-top:14px">Partida</h3>
+        <div class="linha">
+          <label>Tempo para responder <input type="number" id="tempo" min="3" max="60" value="10"> segundos</label>
+        </div>
+        <div class="linha" style="margin-top:8px">
+          <label><input type="checkbox" id="sem-repetir" checked> Não repetir a mesma letra e categoria seguidas</label>
+        </div>
+        <div class="linha" style="margin-top:10px">
+          <button type="button" class="secundario" id="restaurar">Voltar ao padrão</button>
+        </div>
+      </div>
+    </div>
+  </details>
+</div>
+
+<script>
+(function () {
+  "use strict";
+  const $ = (id) => document.getElementById(id);
+
+  // ---------- Configuração padrão ----------
+  const ALFABETO = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
+  const CATEGORIAS_PADRAO = [
+    "CEP = Cidade, estado ou país",
+    "FLV = Fruta, legume ou verdura",
+    "Animal",
+    "Nome de pessoa",
+    "Objeto",
+    "Cor",
+    "Profissão",
+    "Comida",
+    "Artista",
+    "Time de futebol",
+    "Marca",
+    "Filme ou série",
+    "Parte do corpo",
+    "Esporte",
+    "Algo da escola",
+  ];
+  const config = { categorias: CATEGORIAS_PADRAO.slice(), letras: ALFABETO.slice(), tempo: 10, semRepetir: true, som: true };
+  try {
+    const salvo = JSON.parse(localStorage.getItem("roleta-do-stop") || "null");
+    if (salvo) Object.assign(config, salvo);
+  } catch (e) { /* sem armazenamento: usa o padrão */ }
+  function salvar() { try { localStorage.setItem("roleta-do-stop", JSON.stringify(config)); } catch (e) {} }
+
+  // "FLV = Fruta, legume ou verdura" -> { rotulo: "FLV", descricao: "Fruta, legume ou verdura" }
+  function lerCategoria(linha) {
+    const [rotulo, ...resto] = linha.split("=");
+    return { rotulo: rotulo.trim(), descricao: resto.join("=").trim() };
+  }
+  const categorias = () => config.categorias.map(lerCategoria).filter((c) => c.rotulo);
+
+  // ---------- Roletas ----------
+  const CORES = ["#ff6b6b", "#ffc93c", "#3ddc97", "#4cc9f0", "#9b5de5", "#f15bb5", "#ff9f1c", "#2ec4b6"];
+
+  function criarRoleta(canvas) {
+    const ctx = canvas.getContext("2d");
+    const r = { canvas, ctx, itens: [], angulo: 0, girando: false };
+    r.desenhar = function () {
+      const n = r.itens.length, W = canvas.width, c = W / 2, raio = c - 8;
+      ctx.clearRect(0, 0, W, W);
+      if (!n) return;
+      const fatia = (Math.PI * 2) / n;
+      ctx.save();
+      ctx.translate(c, c);
+      ctx.rotate(r.angulo);
+      for (let i = 0; i < n; i++) {
+        // A fatia i fica centrada no ângulo i * fatia, medido a partir do topo.
+        const ini = -Math.PI / 2 + i * fatia - fatia / 2;
+        ctx.beginPath(); ctx.moveTo(0, 0); ctx.arc(0, 0, raio, ini, ini + fatia); ctx.closePath();
+        ctx.fillStyle = CORES[i % CORES.length];
+        if (n % CORES.length === 1 && i === n - 1) ctx.fillStyle = CORES[3]; // evita duas fatias vizinhas iguais
+        ctx.fill();
+        ctx.lineWidth = 3; ctx.strokeStyle = "rgba(27,20,64,.55)"; ctx.stroke();
+        // Texto ao longo do raio.
+        ctx.save();
+        ctx.rotate(ini + fatia / 2);
+        ctx.textAlign = "right"; ctx.textBaseline = "middle";
+        ctx.fillStyle = "#1b1440";
+        const texto = r.itens[i];
+        let tamanho = n > 20 ? 30 : n > 12 ? 30 : 34;
+        ctx.font = `900 ${tamanho}px "Segoe UI", system-ui, sans-serif`;
+        const maximo = raio * 0.62;
+        while (ctx.measureText(texto).width > maximo && tamanho > 12) {
+          tamanho -= 1; ctx.font = `900 ${tamanho}px "Segoe UI", system-ui, sans-serif`;
+        }
+        ctx.fillText(texto, raio - 18, 0);
+        ctx.restore();
+      }
+      ctx.restore();
+      // Centro.
+      ctx.beginPath(); ctx.arc(c, c, raio * 0.17, 0, Math.PI * 2);
+      ctx.fillStyle = "#1b1440"; ctx.fill();
+      ctx.lineWidth = 6; ctx.strokeStyle = "#ffc93c"; ctx.stroke();
+      ctx.beginPath(); ctx.arc(c, c, raio, 0, Math.PI * 2);
+      ctx.lineWidth = 8; ctx.strokeStyle = "#fff8ec"; ctx.stroke();
+    };
+    // Gira até a fatia `alvo` ficar sob o ponteiro (no topo).
+    r.girar = function (alvo, duracao, aoPassar) {
+      return new Promise((fim) => {
+        const n = r.itens.length, fatia = (Math.PI * 2) / n;
+        const desvio = (Math.random() - 0.5) * fatia * 0.7; // não para sempre no centro exato da fatia
+        const atual = ((r.angulo % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
+        let destino = -alvo * fatia + desvio;
+        destino = ((destino % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
+        let delta = destino - atual;
+        if (delta < 0) delta += Math.PI * 2;
+        delta += Math.PI * 2 * (5 + Math.floor(Math.random() * 3)); // 5 a 7 voltas
+        const inicio = performance.now(), angInicial = r.angulo;
+        let ultimaFatia = Math.floor(angInicial / fatia);
+        r.girando = true;
+        const passo = (agora) => {
+          const p = Math.min(1, (agora - inicio) / duracao);
+          const suave = 1 - Math.pow(1 - p, 4); // desacelera no final
+          r.angulo = angInicial + delta * suave;
+          const f = Math.floor(r.angulo / fatia);
+          if (f !== ultimaFatia) { ultimaFatia = f; aoPassar && aoPassar(); }
+          r.desenhar();
+          if (p < 1) requestAnimationFrame(passo);
+          else { r.girando = false; fim(); }
+        };
+        requestAnimationFrame(passo);
+      });
+    };
+    return r;
+  }
+
+  const rodaLetras = criarRoleta($("roda-letras"));
+  const rodaCategorias = criarRoleta($("roda-categorias"));
+
+  function atualizarRoletas() {
+    rodaLetras.itens = config.letras.length ? config.letras.slice() : ALFABETO.slice();
+    rodaCategorias.itens = categorias().map((c) => c.rotulo);
+    if (!rodaCategorias.itens.length) rodaCategorias.itens = ["?"];
+    rodaLetras.desenhar(); rodaCategorias.desenhar();
+  }
+
+  // ---------- Sons (só tocam depois do primeiro clique) ----------
+  let audio = null;
+  function tom(freq, dur, tipo = "sine", volume = 0.15) {
+    if (!config.som) return;
+    try {
+      audio = audio || new (window.AudioContext || window.webkitAudioContext)();
+      const o = audio.createOscillator(), g = audio.createGain();
+      o.type = tipo; o.frequency.value = freq;
+      g.gain.setValueAtTime(volume, audio.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.0001, audio.currentTime + dur);
+      o.connect(g).connect(audio.destination);
+      o.start(); o.stop(audio.currentTime + dur);
+    } catch (e) { /* navegador sem som: segue sem */ }
+  }
+  let ultimoClique = 0;
+  const clique = () => { const t = performance.now(); if (t - ultimoClique > 45) { ultimoClique = t; tom(1400, 0.03, "square", 0.04); } };
+
+  // ---------- Rodada ----------
+  const historico = [];
+  let ultimaLetra = null, ultimaCategoria = null, cronometro = null;
+
+  function sortear(lista, evitar) {
+    if (lista.length <= 1 || !config.semRepetir) return Math.floor(Math.random() * lista.length);
+    let i;
+    do { i = Math.floor(Math.random() * lista.length); } while (lista[i] === evitar);
+    return i;
+  }
+
+  function pararCronometro() {
+    if (cronometro) { cancelAnimationFrame(cronometro); cronometro = null; }
+    $("parar").hidden = true;
+  }
+
+  function mostrarTempo(restante, total) {
+    const p = Math.max(0, restante / total);
+    $("barra").setAttribute("stroke-dashoffset", String(326.7 * (1 - p)));
+    $("segundos").textContent = Math.ceil(restante);
+    $("cronometro").classList.toggle("alerta", restante <= 3 && restante > 0);
+  }
+
+  function iniciarCronometro() {
+    const total = config.tempo, inicio = performance.now();
+    let ultimoSegundo = total + 1;
+    $("parar").hidden = false;
+    $("mensagem").className = "mensagem";
+    $("mensagem").textContent = "Valendo!";
+    const passo = (agora) => {
+      const restante = total - (agora - inicio) / 1000;
+      mostrarTempo(restante, total);
+      const s = Math.ceil(restante);
+      if (s !== ultimoSegundo) {
+        ultimoSegundo = s;
+        if (s <= 3 && s > 0) tom(880, 0.12, "sine", 0.2);
+      }
+      if (restante <= 0) {
+        cronometro = null; $("parar").hidden = true;
+        $("cronometro").classList.remove("alerta");
+        $("mensagem").className = "mensagem tempo";
+        $("mensagem").textContent = "TEMPO!";
+        tom(220, 0.6, "sawtooth", 0.18);
+        $("girar").disabled = false; $("girar").focus();
+        return;
+      }
+      cronometro = requestAnimationFrame(passo);
+    };
+    cronometro = requestAnimationFrame(passo);
+  }
+
+  async function girar() {
+    if (rodaLetras.girando || rodaCategorias.girando) return;
+    pararCronometro();
+    $("girar").disabled = true;
+    $("letra").textContent = "?";
+    $("categoria").textContent = "Girando…";
+    $("descricao").textContent = "";
+    $("mensagem").className = "mensagem"; $("mensagem").textContent = "";
+    mostrarTempo(config.tempo, config.tempo);
+
+    const cats = categorias();
+    const iL = sortear(rodaLetras.itens, ultimaLetra);
+    const iC = sortear(rodaCategorias.itens, ultimaCategoria);
+    await Promise.all([
+      rodaLetras.girar(iL, 3800 + Math.random() * 600, clique),
+      rodaCategorias.girar(iC, 4600 + Math.random() * 600, clique),
+    ]);
+
+    const letra = rodaLetras.itens[iL], cat = cats[iC] || { rotulo: rodaCategorias.itens[iC], descricao: "" };
+    ultimaLetra = letra; ultimaCategoria = cat.rotulo;
+    $("letra").textContent = letra;
+    $("categoria").textContent = cat.rotulo;
+    $("descricao").textContent = cat.descricao;
+    tom(660, 0.12, "triangle", 0.2); setTimeout(() => tom(990, 0.18, "triangle", 0.2), 120);
+
+    historico.unshift(`<b>${letra}</b> · ${cat.rotulo.replace(/[&<>]/g, "")}`);
+    historico.length = Math.min(historico.length, 6);
+    $("historico").innerHTML = "Rodadas anteriores: " + historico.join(" &nbsp;|&nbsp; ");
+    iniciarCronometro();
+  }
+
+  $("girar").addEventListener("click", girar);
+  $("parar").addEventListener("click", () => {
+    pararCronometro();
+    $("mensagem").className = "mensagem"; $("mensagem").textContent = "Tempo parado";
+    $("cronometro").classList.remove("alerta");
+    $("girar").disabled = false;
+  });
+  $("som").addEventListener("click", () => {
+    config.som = !config.som; salvar();
+    $("som").textContent = "Som: " + (config.som ? "ligado" : "desligado");
+    $("som").setAttribute("aria-pressed", String(config.som));
+  });
+  document.addEventListener("keydown", (e) => {
+    if (e.target.matches("input, textarea, select")) return;
+    if (e.key === "Enter" || e.key === " ") { e.preventDefault(); if (!$("girar").disabled) girar(); }
+  });
+
+  // ---------- Configurações ----------
+  function montarLetras() {
+    $("letras").innerHTML = ALFABETO.map((l) =>
+      `<label><input type="checkbox" value="${l}" ${config.letras.includes(l) ? "checked" : ""} aria-label="Letra ${l}"><span>${l}</span></label>`).join("");
+  }
+  $("letras").addEventListener("change", () => {
+    const marcadas = [...$("letras").querySelectorAll("input:checked")].map((i) => i.value);
+    if (!marcadas.length) { montarLetras(); return; } // pelo menos uma letra
+    config.letras = marcadas; salvar(); atualizarRoletas();
+  });
+  $("tirar-dificeis").addEventListener("click", () => {
+    config.letras = ALFABETO.filter((l) => !"KWXY".includes(l)); salvar(); montarLetras(); atualizarRoletas();
+  });
+  $("todas-letras").addEventListener("click", () => {
+    config.letras = ALFABETO.slice(); salvar(); montarLetras(); atualizarRoletas();
+  });
+  $("categorias").addEventListener("input", () => {
+    config.categorias = $("categorias").value.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+    salvar(); atualizarRoletas();
+  });
+  $("tempo").addEventListener("input", () => {
+    const n = Math.round(Number($("tempo").value));
+    if (n >= 3 && n <= 60) { config.tempo = n; salvar(); if (!cronometro) mostrarTempo(n, n); }
+  });
+  $("sem-repetir").addEventListener("change", () => { config.semRepetir = $("sem-repetir").checked; salvar(); });
+  $("restaurar").addEventListener("click", () => {
+    Object.assign(config, { categorias: CATEGORIAS_PADRAO.slice(), letras: ALFABETO.slice(), tempo: 10, semRepetir: true });
+    salvar(); preencher();
+  });
+
+  function preencher() {
+    $("categorias").value = config.categorias.join("\n");
+    $("tempo").value = config.tempo;
+    $("sem-repetir").checked = config.semRepetir;
+    $("som").textContent = "Som: " + (config.som ? "ligado" : "desligado");
+    $("som").setAttribute("aria-pressed", String(config.som));
+    montarLetras(); atualizarRoletas(); mostrarTempo(config.tempo, config.tempo);
+  }
+  preencher();
+})();
+</script>
+</body>
+</html>
