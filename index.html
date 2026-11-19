@@ -110,6 +110,47 @@
   .linha input[type="number"] { width: 5.5em; }
   .linha input[type="checkbox"] { width: 20px; height: 20px; accent-color: var(--sol); }
 
+  [hidden] { display: none !important; }
+
+  /* Modos */
+  .modos { display: inline-flex; background: rgba(0,0,0,.25); border-radius: 999px; padding: 4px; gap: 4px; }
+  .modos button { background: transparent; color: var(--suave); padding: 7px 16px; font-weight: 800; }
+  .modos button[aria-pressed="true"] { background: var(--sol); color: #2b1d00; }
+
+  /* Modo eliminação */
+  body.elim { --roleta: min(30vw, calc(100vh - 400px), 440px); }
+  .vez { display: grid; gap: 2px; }
+  .nome-vez { font-size: clamp(1.8rem, 3.6vw, 2.8rem); font-weight: 900; line-height: 1.05; color: var(--menta); word-break: break-word; }
+  .nome-vez.fora { color: var(--coral); text-decoration: line-through; }
+  .info-rodada { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px 18px; color: var(--suave); font-weight: 700; }
+  .info-rodada b { color: var(--texto); font-variant-numeric: tabular-nums; }
+  button.falou { background: var(--menta); color: #04281a; font-size: 1.5rem; padding: 14px 48px; box-shadow: 0 6px 0 #22a26c, 0 10px 24px rgba(0,0,0,.35); }
+  button.falou:active:not(:disabled) { transform: translateY(4px); box-shadow: 0 2px 0 #22a26c; }
+  .participantes { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; }
+  .participantes span { padding: 4px 12px; border-radius: 999px; background: rgba(255,255,255,.1); font-weight: 700; font-size: .95rem; }
+  .participantes span.atual { background: var(--menta); color: #04281a; }
+  .participantes span.fora { background: transparent; color: rgba(255,255,255,.4); text-decoration: line-through; font-weight: 600; }
+  .elim-config { background: var(--painel); border-radius: var(--raio); padding: 16px; display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); }
+  .elim-config h3 { margin: 0 0 6px; font-size: 1.05rem; }
+  .elim-config p { margin: 0 0 8px; color: var(--suave); font-size: .9rem; }
+  .elim-config .acoes { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+  .elim-config .erro { color: var(--coral); font-weight: 700; }
+  .segmentos { display: inline-flex; gap: 6px; flex-wrap: wrap; }
+  .segmentos button { background: rgba(255,255,255,.12); color: var(--texto); padding: 8px 18px; }
+  .segmentos button[aria-pressed="true"] { background: var(--sol); color: #2b1d00; }
+
+  /* Campeão */
+  .campeao { position: fixed; inset: 0; z-index: 20; display: grid; place-items: center; text-align: center; padding: 20px;
+    background: radial-gradient(circle at 50% 30%, #3b2a8a, #120c2e 70%); overflow: hidden; }
+  .campeao[hidden] { display: none; }
+  .campeao .trofeu { font-size: clamp(5rem, 16vw, 10rem); line-height: 1; animation: pulo 1.2s ease-in-out infinite alternate; }
+  .campeao .titulo { font-size: clamp(1.2rem, 3vw, 2rem); letter-spacing: .2em; text-transform: uppercase; color: var(--sol); font-weight: 900; margin-top: 10px; }
+  .campeao .nome { font-size: clamp(3rem, 10vw, 7rem); font-weight: 900; line-height: 1.05; margin: 8px 0 6px; word-break: break-word; }
+  .campeao .resumo { color: var(--suave); font-size: 1.1rem; margin-bottom: 22px; }
+  .campeao .confete { position: absolute; top: -40px; width: 12px; height: 18px; border-radius: 3px; animation: cair linear infinite; }
+  @keyframes pulo { from { transform: translateY(0) rotate(-4deg); } to { transform: translateY(-14px) rotate(4deg); } }
+  @keyframes cair { to { transform: translateY(110vh) rotate(720deg); } }
+
   @media (max-width: 900px) {
     :root { --roleta: min(44vw, 340px); }
     .mesa { grid-template-columns: 1fr 1fr; }
@@ -126,7 +167,8 @@
     button.girar { font-size: 1.2rem; padding: 12px 34px; }
   }
   @media (prefers-reduced-motion: reduce) {
-    .cronometro.alerta .numero { animation: none; }
+    .cronometro.alerta .numero, .campeao .trofeu { animation: none; }
+    .campeao .confete { display: none; }
   }
 </style>
 </head>
@@ -134,7 +176,11 @@
 <div class="pagina">
   <header>
     <h1>Roleta do <span>Stop</span></h1>
-    <p>Gire as roletas e diga algo da categoria com a letra sorteada antes de o tempo acabar.</p>
+    <p id="subtitulo">Gire as roletas e diga algo da categoria com a letra sorteada antes de o tempo acabar.</p>
+    <div class="modos" role="group" aria-label="Modo de jogo">
+      <button type="button" id="modo-livre" aria-pressed="true">Modo livre</button>
+      <button type="button" id="modo-elim" aria-pressed="false">Modo eliminação</button>
+    </div>
   </header>
 
   <main class="mesa">
@@ -153,6 +199,10 @@
         <div class="categoria-sorteada" id="categoria">Clique em Girar</div>
         <div class="categoria-descricao" id="descricao"></div>
       </div>
+      <div class="vez" id="vez" hidden>
+        <div class="rotulo">Vez de</div>
+        <div class="nome-vez" id="nome-vez"></div>
+      </div>
       <div class="cronometro" id="cronometro" aria-label="Tempo restante">
         <svg viewBox="0 0 120 120" aria-hidden="true">
           <circle class="trilha" cx="60" cy="60" r="52"></circle>
@@ -169,12 +219,45 @@
     </section>
   </main>
 
+  <section class="elim-config" id="elim-config" hidden aria-label="Configurar o modo eliminação">
+    <div>
+      <h3>Alunos participantes</h3>
+      <p>Um nome por linha. A ordem de quem responde é sorteada a cada rodada.</p>
+      <textarea id="alunos" spellcheck="false" placeholder="Ana&#10;Bruno&#10;Carla"></textarea>
+      <p id="conta-alunos" style="margin-top:6px"></p>
+    </div>
+    <div>
+      <h3>Tempo para cada aluno responder</h3>
+      <div class="segmentos" id="tempo-elim" role="group" aria-label="Tempo para responder">
+        <button type="button" data-s="5" aria-pressed="false">5 segundos</button>
+        <button type="button" data-s="10" aria-pressed="true">10 segundos</button>
+        <button type="button" data-s="15" aria-pressed="false">15 segundos</button>
+      </div>
+      <h3 style="margin-top:16px">Como funciona</h3>
+      <p>As roletas giram e a combinação vale por uma rodada de 5 minutos. Na vez de cada aluno aparece o nome dele e o tempo começa a correr. Se ele falar uma palavra certa, clique em <b>✔ Falou!</b> (ou aperte Espaço). Se o tempo acabar sem o clique, ele é eliminado. Quando os 5 minutos terminam, as roletas giram de novo e a disputa recomeça com quem sobrou, em nova ordem, até restar o campeão.</p>
+    </div>
+    <div class="acoes">
+      <button type="button" class="girar" id="comecar-elim">Começar a eliminação</button>
+      <span class="erro" id="erro-elim" role="alert"></span>
+    </div>
+  </section>
+
   <div class="controles">
     <button type="button" class="girar" id="girar">Girar</button>
+    <button type="button" class="falou" id="falou" hidden>✔ Falou!</button>
+    <button type="button" class="secundario" id="pausar" hidden>Pausar</button>
+    <button type="button" class="secundario" id="desfazer" hidden>↩ Devolver o último eliminado</button>
+    <button type="button" class="secundario" id="encerrar" hidden>Encerrar</button>
     <button type="button" class="secundario" id="parar" hidden>Parar o tempo</button>
     <button type="button" class="secundario" id="som" aria-pressed="true">Som: ligado</button>
   </div>
   <div class="historico" id="historico"></div>
+  <div class="info-rodada" id="info-rodada" hidden>
+    <span>Rodada <b id="num-rodada">1</b></span>
+    <span>Tempo da rodada <b id="tempo-rodada">5:00</b></span>
+    <span>Na disputa <b id="na-disputa">0</b></span>
+  </div>
+  <div class="participantes" id="participantes" hidden></div>
 
   <details class="config" id="config">
     <summary>Configurar roletas</summary>
@@ -207,6 +290,20 @@
   </details>
 </div>
 
+<div class="campeao" id="campeao" hidden role="dialog" aria-modal="true" aria-labelledby="nome-campeao">
+  <div>
+    <div class="trofeu" aria-hidden="true">🏆</div>
+    <div class="titulo">Campeão</div>
+    <div class="nome" id="nome-campeao"></div>
+    <div class="resumo" id="resumo-campeao"></div>
+    <div class="controles">
+      <button type="button" class="girar" id="revanche">Jogar de novo com a mesma turma</button>
+      <button type="button" class="secundario" id="desfazer-campeao">↩ Devolver o último eliminado</button>
+      <button type="button" class="secundario" id="fechar-campeao">Voltar</button>
+    </div>
+  </div>
+</div>
+
 <script>
 (function () {
   "use strict";
@@ -231,7 +328,7 @@
     "Esporte",
     "Algo da escola",
   ];
-  const config = { categorias: CATEGORIAS_PADRAO.slice(), letras: ALFABETO.slice(), tempo: 10, semRepetir: true, som: true };
+  const config = { categorias: CATEGORIAS_PADRAO.slice(), letras: ALFABETO.slice(), tempo: 10, semRepetir: true, som: true, alunos: "", tempoElim: 10 };
   try {
     const salvo = JSON.parse(localStorage.getItem("roleta-do-stop") || "null");
     if (salvo) Object.assign(config, salvo);
@@ -402,11 +499,16 @@
     if (rodaLetras.girando || rodaCategorias.girando) return;
     pararCronometro();
     $("girar").disabled = true;
+    mostrarTempo(config.tempo, config.tempo);
+    await girarRoletas();
+    iniciarCronometro();
+  }
+
+  async function girarRoletas() {
     $("letra").textContent = "?";
     $("categoria").textContent = "Girando…";
     $("descricao").textContent = "";
     $("mensagem").className = "mensagem"; $("mensagem").textContent = "";
-    mostrarTempo(config.tempo, config.tempo);
 
     const cats = categorias();
     const iL = sortear(rodaLetras.itens, ultimaLetra);
@@ -426,7 +528,6 @@
     historico.unshift(`<b>${letra}</b> · ${cat.rotulo.replace(/[&<>]/g, "")}`);
     historico.length = Math.min(historico.length, 6);
     $("historico").innerHTML = "Rodadas anteriores: " + historico.join(" &nbsp;|&nbsp; ");
-    iniciarCronometro();
   }
 
   $("girar").addEventListener("click", girar);
@@ -443,8 +544,242 @@
   });
   document.addEventListener("keydown", (e) => {
     if (e.target.matches("input, textarea, select")) return;
-    if (e.key === "Enter" || e.key === " ") { e.preventDefault(); if (!$("girar").disabled) girar(); }
+    if (e.key !== "Enter" && e.key !== " ") return;
+    if (modo === "elim") {
+      if (jogo && jogo.fase === "turno" && !jogo.pausado) { e.preventDefault(); falou(); }
+      return;
+    }
+    e.preventDefault(); if (!$("girar").disabled) girar();
   });
+
+  // ---------- Modo eliminação ----------
+  const RODADA_SEG = 5 * 60;          // cada rodada (uma combinação de letra e categoria) dura 5 minutos
+  const PAUSA_ENTRE_VEZES = 1.4;      // segundos mostrando "Boa!" ou "Eliminado" antes do próximo nome
+  let modo = "livre", jogo = null, ultimoQuadro = 0, ultimoSegundoVez = 0;
+
+  function embaralhar(lista) {
+    const v = lista.slice();
+    for (let i = v.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [v[i], v[j]] = [v[j], v[i]]; }
+    return v;
+  }
+  function lerAlunos() {
+    const vistos = new Set(), lista = [];
+    for (const linha of $("alunos").value.split(/\r?\n/)) {
+      const nome = linha.replace(/\s+/g, " ").trim();
+      if (nome && !vistos.has(nome.toLowerCase())) { vistos.add(nome.toLowerCase()); lista.push(nome); }
+    }
+    return lista;
+  }
+  function contarAlunos() {
+    const n = lerAlunos().length;
+    $("conta-alunos").textContent = n === 0 ? "Nenhum aluno ainda. São precisos pelo menos 2."
+      : n === 1 ? "1 aluno. São precisos pelo menos 2." : `${n} alunos na lista.`;
+  }
+  function mmss(seg) { seg = Math.max(0, Math.ceil(seg)); return Math.floor(seg / 60) + ":" + String(seg % 60).padStart(2, "0"); }
+
+  function trocarModo(novo) {
+    if (novo === modo) return;
+    if (jogo && !confirm("Encerrar a eliminação que está em andamento?")) return;
+    encerrarJogo();
+    modo = novo;
+    document.body.classList.toggle("elim", modo === "elim");
+    $("modo-livre").setAttribute("aria-pressed", String(modo === "livre"));
+    $("modo-elim").setAttribute("aria-pressed", String(modo === "elim"));
+    $("subtitulo").textContent = modo === "elim"
+      ? "Quem não falar a tempo está fora. O último que sobrar é o campeão!"
+      : "Gire as roletas e diga algo da categoria com a letra sorteada antes de o tempo acabar.";
+    pararCronometro();
+    $("girar").hidden = modo === "elim"; $("girar").disabled = false;
+    $("config").hidden = modo === "elim";
+    $("elim-config").hidden = modo !== "elim";
+    $("historico").textContent = "";
+    $("letra").textContent = "?"; $("descricao").textContent = "";
+    $("categoria").textContent = modo === "elim" ? "Monte a lista e comece" : "Clique em Girar";
+    $("mensagem").className = "mensagem"; $("mensagem").textContent = "";
+    mostrarTempo(modo === "elim" ? config.tempoElim : config.tempo, modo === "elim" ? config.tempoElim : config.tempo);
+  }
+
+  function mostrarControlesJogo(ativo) {
+    $("elim-config").hidden = ativo || modo !== "elim";
+    ["falou", "pausar", "encerrar"].forEach((id) => { $(id).hidden = !ativo; });
+    $("desfazer").hidden = true;
+    $("vez").hidden = !ativo; $("info-rodada").hidden = !ativo; $("participantes").hidden = !ativo;
+  }
+
+  function desenharParticipantes() {
+    const caixa = $("participantes"); caixa.innerHTML = "";
+    const atual = jogo.fase === "turno" || jogo.fase === "pausa" ? jogo.ordem[jogo.pos] : null;
+    for (const nome of jogo.todos) {
+      const s = document.createElement("span"); s.textContent = nome;
+      if (!jogo.ativos.includes(nome)) s.className = "fora";
+      else if (nome === atual) s.className = "atual";
+      caixa.appendChild(s);
+    }
+    $("na-disputa").textContent = jogo.ativos.length;
+    $("num-rodada").textContent = jogo.rodada;
+    $("tempo-rodada").textContent = mmss(jogo.rodadaRestante);
+    $("desfazer").hidden = !jogo.ultimoEliminado || jogo.fase === "girando";
+  }
+
+  function comecarEliminacao(lista) {
+    const alunos = lista || lerAlunos();
+    if (alunos.length < 2) { $("erro-elim").textContent = "Escreva o nome de pelo menos 2 alunos."; $("alunos").focus(); return; }
+    $("erro-elim").textContent = "";
+    $("campeao").hidden = true;
+    jogo = { todos: alunos.slice(), ativos: alunos.slice(), ordem: [], pos: 0, rodada: 0, rodadaRestante: RODADA_SEG,
+             vezRestante: 0, pausaRestante: 0, fase: "girando", pausado: false, ultimoEliminado: null, eliminacoes: 0 };
+    mostrarControlesJogo(true);
+    $("pausar").textContent = "Pausar";
+    novaRodada();
+    ultimoQuadro = performance.now();
+    requestAnimationFrame(quadro);
+  }
+
+  async function novaRodada() {
+    jogo.rodada++; jogo.rodadaRestante = RODADA_SEG; jogo.fase = "girando";
+    jogo.ordem = embaralhar(jogo.ativos); jogo.pos = 0; jogo.ultimoEliminado = null;
+    $("falou").disabled = true;
+    $("nome-vez").className = "nome-vez"; $("nome-vez").textContent = jogo.rodada === 1 ? "Girando as roletas…" : "Nova rodada!";
+    mostrarTempo(config.tempoElim, config.tempoElim);
+    desenharParticipantes();
+    const rodadaAtual = jogo.rodada, jogoAtual = jogo;
+    await girarRoletas();
+    if (jogo !== jogoAtual || jogo.rodada !== rodadaAtual) return; // encerrado durante o giro
+    iniciarVez();
+  }
+
+  function iniciarVez() {
+    jogo.fase = "turno"; jogo.vezRestante = config.tempoElim; ultimoSegundoVez = config.tempoElim + 1;
+    $("nome-vez").className = "nome-vez"; $("nome-vez").textContent = jogo.ordem[jogo.pos];
+    $("mensagem").className = "mensagem"; $("mensagem").textContent = "Valendo!";
+    $("falou").disabled = false;
+    tom(740, 0.08, "triangle", 0.15);
+    desenharParticipantes();
+  }
+
+  function falou() {
+    if (!jogo || jogo.fase !== "turno" || jogo.pausado) return;
+    tom(660, 0.1, "triangle", 0.2); setTimeout(() => tom(990, 0.16, "triangle", 0.2), 100);
+    $("mensagem").className = "mensagem"; $("mensagem").textContent = "Boa! ✔";
+    jogo.ultimoEliminado = null;
+    jogo.pos++;
+    entreVezes();
+  }
+
+  function eliminar() {
+    const nome = jogo.ordem[jogo.pos];
+    jogo.ativos = jogo.ativos.filter((n) => n !== nome);
+    jogo.ordem.splice(jogo.pos, 1);
+    jogo.ultimoEliminado = { nome, posOrdem: jogo.pos, posAtivos: jogo.todos.indexOf(nome) };
+    jogo.eliminacoes++;
+    $("nome-vez").className = "nome-vez fora";
+    $("mensagem").className = "mensagem tempo"; $("mensagem").textContent = "ELIMINADO!";
+    $("cronometro").classList.remove("alerta");
+    tom(220, 0.6, "sawtooth", 0.18);
+    entreVezes();
+  }
+
+  function entreVezes() {
+    $("falou").disabled = true;
+    jogo.fase = "pausa"; jogo.pausaRestante = PAUSA_ENTRE_VEZES;
+    desenharParticipantes();
+  }
+
+  function proximaVez() {
+    if (jogo.ativos.length <= 1) { mostrarCampeao(); return; }
+    if (jogo.rodadaRestante <= 0) { novaRodada(); return; }
+    if (jogo.pos >= jogo.ordem.length) { jogo.ordem = embaralhar(jogo.ativos); jogo.pos = 0; }
+    iniciarVez();
+  }
+
+  function quadro(agora) {
+    if (!jogo) return;
+    const dt = Math.min(0.25, (agora - ultimoQuadro) / 1000); ultimoQuadro = agora;
+    if (!jogo.pausado && jogo.fase !== "girando" && jogo.fase !== "fim") {
+      jogo.rodadaRestante = Math.max(0, jogo.rodadaRestante - dt);
+      $("tempo-rodada").textContent = mmss(jogo.rodadaRestante);
+      if (jogo.fase === "turno") {
+        jogo.vezRestante -= dt;
+        mostrarTempo(Math.max(0, jogo.vezRestante), config.tempoElim);
+        const s = Math.ceil(jogo.vezRestante);
+        if (s !== ultimoSegundoVez) { ultimoSegundoVez = s; if (s <= 3 && s > 0) tom(880, 0.12, "sine", 0.2); }
+        if (jogo.vezRestante <= 0) eliminar();
+      } else if (jogo.fase === "pausa") {
+        jogo.pausaRestante -= dt;
+        if (jogo.pausaRestante <= 0) proximaVez();
+      }
+    }
+    if (jogo && jogo.fase !== "fim") requestAnimationFrame(quadro);
+  }
+
+  function mostrarCampeao() {
+    jogo.fase = "fim";
+    const nome = jogo.ativos[0];
+    $("nome-campeao").textContent = nome;
+    $("resumo-campeao").textContent = `Venceu ${jogo.todos.length - 1} colega${jogo.todos.length > 2 ? "s" : ""} em ${jogo.rodada} rodada${jogo.rodada > 1 ? "s" : ""}.`;
+    const caixa = $("campeao");
+    caixa.querySelectorAll(".confete").forEach((c) => c.remove());
+    for (let i = 0; i < 60; i++) {
+      const c = document.createElement("span"); c.className = "confete";
+      c.style.left = Math.random() * 100 + "vw";
+      c.style.background = CORES[i % CORES.length];
+      c.style.animationDuration = 3 + Math.random() * 4 + "s";
+      c.style.animationDelay = -Math.random() * 6 + "s";
+      caixa.appendChild(c);
+    }
+    caixa.hidden = false;
+    [523, 659, 784, 1047].forEach((f, i) => setTimeout(() => tom(f, 0.3, "triangle", 0.2), i * 160));
+    $("revanche").focus();
+  }
+
+  function encerrarJogo() {
+    jogo = null;
+    $("campeao").hidden = true;
+    mostrarControlesJogo(false);
+    $("cronometro").classList.remove("alerta");
+    $("mensagem").className = "mensagem"; $("mensagem").textContent = "";
+    $("categoria").textContent = "Monte a lista e comece"; $("letra").textContent = "?"; $("descricao").textContent = "";
+    mostrarTempo(config.tempoElim, config.tempoElim);
+  }
+
+  $("modo-livre").addEventListener("click", () => trocarModo("livre"));
+  $("modo-elim").addEventListener("click", () => trocarModo("elim"));
+  $("alunos").addEventListener("input", () => { config.alunos = $("alunos").value; salvar(); contarAlunos(); $("erro-elim").textContent = ""; });
+  $("tempo-elim").addEventListener("click", (e) => {
+    const b = e.target.closest("button[data-s]"); if (!b) return;
+    config.tempoElim = Number(b.dataset.s); salvar(); marcarTempoElim();
+    if (!jogo) mostrarTempo(config.tempoElim, config.tempoElim);
+  });
+  function marcarTempoElim() {
+    $("tempo-elim").querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", String(Number(b.dataset.s) === config.tempoElim)));
+  }
+  $("comecar-elim").addEventListener("click", () => comecarEliminacao());
+  $("falou").addEventListener("click", falou);
+  $("pausar").addEventListener("click", () => {
+    if (!jogo) return;
+    jogo.pausado = !jogo.pausado;
+    $("pausar").textContent = jogo.pausado ? "Continuar" : "Pausar";
+    $("falou").disabled = jogo.pausado || jogo.fase !== "turno";
+    if (jogo.pausado) { $("mensagem").className = "mensagem"; $("mensagem").textContent = "Pausado"; }
+    else if (jogo.fase === "turno") $("mensagem").textContent = "Valendo!";
+  });
+  $("desfazer-campeao").addEventListener("click", () => $("desfazer").click());
+  $("desfazer").addEventListener("click", () => {
+    if (!jogo || !jogo.ultimoEliminado || jogo.fase === "girando") return;
+    const u = jogo.ultimoEliminado; jogo.ultimoEliminado = null;
+    jogo.ativos = jogo.todos.filter((n) => n === u.nome || jogo.ativos.includes(n));
+    // volta para a vez dele, com o tempo cheio
+    // entra de novo exatamente na vez atual (antes de quem estava para responder)
+    const i = Math.min(jogo.pos, jogo.ordem.length);
+    jogo.ordem.splice(i, 0, u.nome);
+    jogo.pos = i;
+    jogo.eliminacoes--;
+    if (jogo.fase === "fim") { $("campeao").hidden = true; requestAnimationFrame((t) => { ultimoQuadro = t; requestAnimationFrame(quadro); }); }
+    iniciarVez();
+  });
+  $("encerrar").addEventListener("click", () => { if (confirm("Encerrar a eliminação?")) encerrarJogo(); });
+  $("revanche").addEventListener("click", () => { const turma = jogo ? jogo.todos.slice() : lerAlunos(); comecarEliminacao(turma); });
+  $("fechar-campeao").addEventListener("click", encerrarJogo);
 
   // ---------- Configurações ----------
   function montarLetras() {
@@ -483,6 +818,7 @@
     $("som").textContent = "Som: " + (config.som ? "ligado" : "desligado");
     $("som").setAttribute("aria-pressed", String(config.som));
     montarLetras(); atualizarRoletas(); mostrarTempo(config.tempo, config.tempo);
+    $("alunos").value = config.alunos || ""; contarAlunos(); marcarTempoElim();
   }
   preencher();
 })();
