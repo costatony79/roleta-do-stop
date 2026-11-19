@@ -135,25 +135,25 @@
   .segmentos button[aria-pressed="true"] { background: var(--sol); color: #2b1d00; }
 
   /* Jogo de eliminação: roletas grandes, só metade aparece, presas nas laterais */
-  body.jogando { overflow-x: hidden; --d: min(calc(100vh - 24px), calc(100vw - 520px), 1000px); }
-  body.jogando .roleta { position: fixed; top: 50%; width: var(--d); transform: translateY(-50%); z-index: 0; }
-  body.jogando .roleta h2 { display: none; }
-  body.jogando .roda { width: var(--d); }
-  body.jogando .roleta-esq { left: calc(var(--d) / -2); }
-  body.jogando .roleta-dir { right: calc(var(--d) / -2); }
-  body.jogando .ponteiro { top: 50%; border-left-width: 18px; border-right-width: 18px; border-top-width: 32px; }
-  body.jogando .roleta-esq .ponteiro { left: auto; right: -30px; transform: translateY(-50%) rotate(90deg); }
-  body.jogando .roleta-dir .ponteiro { left: -30px; transform: translateY(-50%) rotate(-90deg); }
-  body.jogando .pagina { position: relative; z-index: 1; padding: 0 calc(var(--d) / 2 + 40px); max-width: none; min-height: calc(100vh - 24px); align-content: center; }
-  body.jogando header { justify-content: center; }
-  body.jogando .mesa { display: block; }
-  body.jogando .resultado { margin: 0 auto; max-width: 420px; padding: 10px 14px; gap: 4px; }
-  body.jogando h1 { font-size: clamp(1.4rem, 2.4vw, 2rem); }
-  body.jogando .letra-sorteada { font-size: clamp(3.4rem, 9vh, 6rem); }
-  body.jogando .cronometro { width: clamp(76px, 13vh, 120px); height: clamp(76px, 13vh, 120px); }
-  body.jogando .cronometro .numero { font-size: clamp(1.8rem, 5vh, 2.8rem); }
+  body.lados { overflow-x: hidden; --d: min(calc(100vh - 24px), calc(100vw - 520px), 1000px); }
+  body.lados .roleta { position: fixed; top: 50%; width: var(--d); transform: translateY(-50%); z-index: 0; }
+  body.lados .roleta h2 { display: none; }
+  body.lados .roda { width: var(--d); }
+  body.lados .roleta-esq { left: calc(var(--d) / -2); }
+  body.lados .roleta-dir { right: calc(var(--d) / -2); }
+  body.lados .ponteiro { top: 50%; border-left-width: 18px; border-right-width: 18px; border-top-width: 32px; }
+  body.lados .roleta-esq .ponteiro { left: auto; right: -30px; transform: translateY(-50%) rotate(90deg); }
+  body.lados .roleta-dir .ponteiro { left: -30px; transform: translateY(-50%) rotate(-90deg); }
+  body.lados .pagina { position: relative; z-index: 1; padding: 0 calc(var(--d) / 2 + 40px); max-width: none; min-height: calc(100vh - 24px); align-content: center; }
+  body.lados header { justify-content: center; }
+  body.lados .mesa { display: block; }
+  body.lados .resultado { margin: 0 auto; max-width: 420px; padding: 10px 14px; gap: 4px; }
+  body.lados h1 { font-size: clamp(1.4rem, 2.4vw, 2rem); }
+  body.lados .letra-sorteada { font-size: clamp(3.4rem, 9vh, 6rem); }
+  body.lados .cronometro { width: clamp(76px, 13vh, 120px); height: clamp(76px, 13vh, 120px); }
+  body.lados .cronometro .numero { font-size: clamp(1.8rem, 5vh, 2.8rem); }
   body.jogando .historico { display: none; }
-  body.jogando .pagina { gap: 8px; }
+  body.lados .pagina { gap: 8px; }
 
   /* Inscrição dos participantes */
   .inscricao { display: grid; gap: 18px; justify-items: center; padding: 10px 0 20px; }
@@ -193,13 +193,13 @@
     .resultado { grid-column: 1 / -1; grid-row: 2; max-width: 520px; }
   }
   @media (max-width: 900px) {
-    body.jogando { overflow: auto; }
-    body.jogando .roleta { position: relative; top: auto; transform: none; width: var(--roleta); left: auto; right: auto; }
-    body.jogando .roda { width: var(--roleta); }
-    body.jogando .roleta h2 { display: block; }
-    body.jogando .roleta-esq .ponteiro, body.jogando .roleta-dir .ponteiro { top: -14px; left: 50%; right: auto; transform: translateX(-50%); border-left-width: 14px; border-right-width: 14px; border-top-width: 24px; }
-    body.jogando .pagina { padding: 0; min-height: 0; }
-    body.jogando .mesa { display: grid; }
+    body.lados { overflow: auto; }
+    body.lados .roleta { position: relative; top: auto; transform: none; width: var(--roleta); left: auto; right: auto; }
+    body.lados .roda { width: var(--roleta); }
+    body.lados .roleta h2 { display: block; }
+    body.lados .roleta-esq .ponteiro, body.lados .roleta-dir .ponteiro { top: -14px; left: 50%; right: auto; transform: translateX(-50%); border-left-width: 14px; border-right-width: 14px; border-top-width: 24px; }
+    body.lados .pagina { padding: 0; min-height: 0; }
+    body.lados .mesa { display: grid; }
   }
   @media (max-width: 520px) {
     :root { --roleta: min(42vw, 200px); }
@@ -665,11 +665,13 @@
     $("categoria").textContent = modo === "elim" ? "Monte a lista e comece" : "Clique em Girar";
     $("mensagem").className = "mensagem"; $("mensagem").textContent = "";
     mostrarTempo(modo === "elim" ? config.tempoElim : config.tempo, modo === "elim" ? config.tempoElim : config.tempo);
+    document.body.classList.toggle("lados", modo === "livre");
+    posicionarRoletas();
   }
 
   // No jogo, as roletas ficam nas laterais com a seta virada para dentro (em telas largas).
   function posicionarRoletas() {
-    const lados = document.body.classList.contains("jogando") && matchMedia("(min-width: 901px)").matches;
+    const lados = document.body.classList.contains("lados") && matchMedia("(min-width: 901px)").matches;
     rodaLetras.base = lados ? 0 : -Math.PI / 2;
     rodaCategorias.base = lados ? Math.PI : -Math.PI / 2;
     rodaLetras.virar = rodaCategorias.virar = lados;
@@ -680,6 +682,8 @@
   function mostrarControlesJogo(ativo) {
     $("elim-config").hidden = ativo || modo !== "elim";
     document.body.classList.toggle("jogando", ativo);
+    // roletas grandes nas laterais: sempre no modo livre; no modo eliminação, durante o jogo
+    document.body.classList.toggle("lados", modo === "livre" || ativo);
     document.body.classList.toggle("inscrevendo", !ativo && modo === "elim");
     posicionarRoletas();
     ["falou", "pausar", "encerrar"].forEach((id) => { $(id).hidden = !ativo; });
@@ -924,6 +928,8 @@
     contarAlunos(); marcarTempoElim();
   }
   preencher();
+  document.body.classList.add("lados");
+  posicionarRoletas();
 })();
 </script>
 </body>
