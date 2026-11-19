@@ -12,12 +12,16 @@ de categorias. Ao clicar em **Girar**, as duas giram juntas e o estudante tem
 
 ## Modo eliminação
 
-- Lista de alunos participantes (um nome por linha) e 5, 10 ou 15 segundos para cada um responder.
+- Tela de participantes: cada nome é digitado e confirmado um por um, e aparece na hora para a turma ver. Botão para usar a turma da aula anterior.
+- 5, 10 ou 15 segundos para cada um responder.
+- Durante o jogo, as roletas ficam grandes nas laterais, com só a metade aparecendo e a seta virada para dentro.
 - As roletas giram e a combinação vale por uma rodada de 5 minutos. Os alunos respondem em ordem sorteada.
 - O professor clica em **✔ Falou!** (ou aperta Espaço) quando o aluno acerta. Se o tempo acabar sem o clique, o aluno é eliminado.
 - Ao fim dos 5 minutos, as roletas giram de novo e a disputa recomeça com quem sobrou, em nova ordem.
 - Botões para pausar e para devolver o último eliminado (em caso de clique esquecido).
 - Quando sobra um só, aparece a tela do campeão.
 
-É uma página única (`index.html`), sem dependências. Para testar, basta abrir o arquivo
+As instruções ficam em `como-jogar.html`, aberta pelo botão **Como jogar**.
+
+O jogo é uma página única (`index.html`), sem dependências. Para testar, basta abrir o arquivo
 no navegador.

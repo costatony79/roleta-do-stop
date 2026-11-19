@@ -130,14 +130,50 @@
   .participantes span { padding: 4px 12px; border-radius: 999px; background: rgba(255,255,255,.1); font-weight: 700; font-size: .95rem; }
   .participantes span.atual { background: var(--menta); color: #04281a; }
   .participantes span.fora { background: transparent; color: rgba(255,255,255,.4); text-decoration: line-through; font-weight: 600; }
-  .elim-config { background: var(--painel); border-radius: var(--raio); padding: 16px; display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); }
-  .elim-config h3 { margin: 0 0 6px; font-size: 1.05rem; }
-  .elim-config p { margin: 0 0 8px; color: var(--suave); font-size: .9rem; }
-  .elim-config .acoes { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
-  .elim-config .erro { color: var(--coral); font-weight: 700; }
   .segmentos { display: inline-flex; gap: 6px; flex-wrap: wrap; }
   .segmentos button { background: rgba(255,255,255,.12); color: var(--texto); padding: 8px 18px; }
   .segmentos button[aria-pressed="true"] { background: var(--sol); color: #2b1d00; }
+
+  /* Jogo de eliminação: roletas grandes, só metade aparece, presas nas laterais */
+  body.jogando { overflow-x: hidden; --d: min(calc(100vh - 24px), calc(100vw - 520px), 1000px); }
+  body.jogando .roleta { position: fixed; top: 50%; width: var(--d); transform: translateY(-50%); z-index: 0; }
+  body.jogando .roleta h2 { display: none; }
+  body.jogando .roda { width: var(--d); }
+  body.jogando .roleta-esq { left: calc(var(--d) / -2); }
+  body.jogando .roleta-dir { right: calc(var(--d) / -2); }
+  body.jogando .ponteiro { top: 50%; border-left-width: 18px; border-right-width: 18px; border-top-width: 32px; }
+  body.jogando .roleta-esq .ponteiro { left: auto; right: -30px; transform: translateY(-50%) rotate(90deg); }
+  body.jogando .roleta-dir .ponteiro { left: -30px; transform: translateY(-50%) rotate(-90deg); }
+  body.jogando .pagina { position: relative; z-index: 1; padding: 0 calc(var(--d) / 2 + 40px); max-width: none; min-height: calc(100vh - 24px); align-content: center; }
+  body.jogando header { justify-content: center; }
+  body.jogando .mesa { display: block; }
+  body.jogando .resultado { margin: 0 auto; max-width: 420px; padding: 10px 14px; gap: 4px; }
+  body.jogando h1 { font-size: clamp(1.4rem, 2.4vw, 2rem); }
+  body.jogando .letra-sorteada { font-size: clamp(3.4rem, 9vh, 6rem); }
+  body.jogando .cronometro { width: clamp(76px, 13vh, 120px); height: clamp(76px, 13vh, 120px); }
+  body.jogando .cronometro .numero { font-size: clamp(1.8rem, 5vh, 2.8rem); }
+  body.jogando .historico { display: none; }
+  body.jogando .pagina { gap: 8px; }
+
+  /* Inscrição dos participantes */
+  .inscricao { display: grid; gap: 18px; justify-items: center; padding: 10px 0 20px; }
+  .insc-titulo { margin: 0; font-size: clamp(1.8rem, 4vw, 3rem); font-weight: 900; letter-spacing: .02em; }
+  .insc-form { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; width: min(100%, 720px); }
+  .insc-form input { flex: 1 1 260px; font: inherit; font-size: 1.5rem; font-weight: 700; color: var(--texto); background: rgba(0,0,0,.3);
+    border: 2px solid rgba(255,255,255,.25); border-radius: 999px; padding: 12px 22px; }
+  .insc-form input:focus { outline: none; border-color: var(--sol); }
+  .insc-nomes { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; width: min(100%, 1100px); min-height: 70px; align-content: flex-start; }
+  .insc-nome { display: inline-flex; align-items: center; gap: 8px; background: var(--painel); border: 2px solid rgba(255,255,255,.15);
+    border-radius: 999px; padding: 8px 10px 8px 20px; font-size: clamp(1.2rem, 2.4vw, 1.7rem); font-weight: 800; animation: entrar .45s cubic-bezier(.2,1.6,.4,1); }
+  .insc-nome.novo { border-color: var(--menta); }
+  .insc-nome button { background: rgba(255,255,255,.12); color: var(--texto); width: 32px; height: 32px; padding: 0; font-size: 1.1rem; line-height: 1; }
+  .elim-erro { color: var(--coral); font-weight: 700; min-height: 1.4em; font-size: 1.1rem; }
+  .insc-conta { color: var(--suave); font-size: 1.1rem; font-weight: 700; }
+  .insc-rodape { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 12px; }
+  .botao-link { font-weight: 700; color: var(--texto); background: rgba(255,255,255,.12); border-radius: 999px; padding: 10px 22px; text-decoration: none; }
+  .botao-link:focus-visible { outline: 3px solid #fff; outline-offset: 3px; }
+  body.inscrevendo .mesa, body.inscrevendo .controles, body.inscrevendo .historico { display: none; }
+  @keyframes entrar { from { transform: scale(.3); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 
   /* Campeão */
   .campeao { position: fixed; inset: 0; z-index: 20; display: grid; place-items: center; text-align: center; padding: 20px;
@@ -155,6 +191,15 @@
     :root { --roleta: min(44vw, 340px); }
     .mesa { grid-template-columns: 1fr 1fr; }
     .resultado { grid-column: 1 / -1; grid-row: 2; max-width: 520px; }
+  }
+  @media (max-width: 900px) {
+    body.jogando { overflow: auto; }
+    body.jogando .roleta { position: relative; top: auto; transform: none; width: var(--roleta); left: auto; right: auto; }
+    body.jogando .roda { width: var(--roleta); }
+    body.jogando .roleta h2 { display: block; }
+    body.jogando .roleta-esq .ponteiro, body.jogando .roleta-dir .ponteiro { top: -14px; left: 50%; right: auto; transform: translateX(-50%); border-left-width: 14px; border-right-width: 14px; border-top-width: 24px; }
+    body.jogando .pagina { padding: 0; min-height: 0; }
+    body.jogando .mesa { display: grid; }
   }
   @media (max-width: 520px) {
     :root { --roleta: min(42vw, 200px); }
@@ -184,9 +229,9 @@
   </header>
 
   <main class="mesa">
-    <section class="roleta" aria-label="Roleta de letras">
+    <section class="roleta roleta-esq" aria-label="Roleta de letras">
       <h2>Letra</h2>
-      <div class="roda"><div class="ponteiro" aria-hidden="true"></div><canvas id="roda-letras" width="600" height="600"></canvas></div>
+      <div class="roda"><div class="ponteiro" aria-hidden="true"></div><canvas id="roda-letras" width="1000" height="1000"></canvas></div>
     </section>
 
     <section class="resultado" aria-live="polite">
@@ -213,33 +258,32 @@
       <div class="mensagem" id="mensagem"></div>
     </section>
 
-    <section class="roleta" aria-label="Roleta de categorias">
+    <section class="roleta roleta-dir" aria-label="Roleta de categorias">
       <h2>Categoria</h2>
-      <div class="roda"><div class="ponteiro" aria-hidden="true"></div><canvas id="roda-categorias" width="600" height="600"></canvas></div>
+      <div class="roda"><div class="ponteiro" aria-hidden="true"></div><canvas id="roda-categorias" width="1000" height="1000"></canvas></div>
     </section>
   </main>
 
-  <section class="elim-config" id="elim-config" hidden aria-label="Configurar o modo eliminação">
-    <div>
-      <h3>Alunos participantes</h3>
-      <p>Um nome por linha. A ordem de quem responde é sorteada a cada rodada.</p>
-      <textarea id="alunos" spellcheck="false" placeholder="Ana&#10;Bruno&#10;Carla"></textarea>
-      <p id="conta-alunos" style="margin-top:6px"></p>
-    </div>
-    <div>
-      <h3>Tempo para cada aluno responder</h3>
+  <section class="inscricao" id="elim-config" hidden aria-label="Participantes do modo eliminação">
+    <h2 class="insc-titulo">Participantes</h2>
+    <form class="insc-form" id="form-aluno" autocomplete="off">
+      <input id="novo-aluno" maxlength="40" placeholder="Nome do aluno" aria-label="Nome do aluno">
+      <button type="submit" class="girar">Confirmar</button>
+    </form>
+    <div class="insc-nomes" id="lista-insc" aria-live="polite"></div>
+    <div class="insc-conta" id="conta-alunos"></div>
+    <div class="insc-rodape">
       <div class="segmentos" id="tempo-elim" role="group" aria-label="Tempo para responder">
-        <button type="button" data-s="5" aria-pressed="false">5 segundos</button>
-        <button type="button" data-s="10" aria-pressed="true">10 segundos</button>
-        <button type="button" data-s="15" aria-pressed="false">15 segundos</button>
+        <button type="button" data-s="5" aria-pressed="false">5 s</button>
+        <button type="button" data-s="10" aria-pressed="true">10 s</button>
+        <button type="button" data-s="15" aria-pressed="false">15 s</button>
       </div>
-      <h3 style="margin-top:16px">Como funciona</h3>
-      <p>As roletas giram e a combinação vale por uma rodada de 5 minutos. Na vez de cada aluno aparece o nome dele e o tempo começa a correr. Se ele falar uma palavra certa, clique em <b>✔ Falou!</b> (ou aperte Espaço). Se o tempo acabar sem o clique, ele é eliminado. Quando os 5 minutos terminam, as roletas giram de novo e a disputa recomeça com quem sobrou, em nova ordem, até restar o campeão.</p>
+      <button type="button" class="secundario" id="carregar-turma" hidden>Usar a turma anterior</button>
+      <button type="button" class="secundario" id="limpar-lista" hidden>Limpar</button>
+      <a class="botao-link" href="como-jogar.html" target="_blank" rel="noopener">Como jogar</a>
     </div>
-    <div class="acoes">
-      <button type="button" class="girar" id="comecar-elim">Começar a eliminação</button>
-      <span class="erro" id="erro-elim" role="alert"></span>
-    </div>
+    <button type="button" class="girar" id="comecar-elim">Começar</button>
+    <span class="elim-erro" id="erro-elim" role="alert"></span>
   </section>
 
   <div class="controles">
@@ -347,9 +391,10 @@
 
   function criarRoleta(canvas) {
     const ctx = canvas.getContext("2d");
-    const r = { canvas, ctx, itens: [], angulo: 0, girando: false };
+    // base: ângulo onde fica o ponteiro (-90° = no topo; 0° = à direita; 180° = à esquerda)
+    const r = { canvas, ctx, itens: [], angulo: 0, girando: false, base: -Math.PI / 2, virar: false };
     r.desenhar = function () {
-      const n = r.itens.length, W = canvas.width, c = W / 2, raio = c - 8;
+      const n = r.itens.length, W = canvas.width, k = W / 600, c = W / 2, raio = c - 8 * k;
       ctx.clearRect(0, 0, W, W);
       if (!n) return;
       const fatia = (Math.PI * 2) / n;
@@ -358,34 +403,35 @@
       ctx.rotate(r.angulo);
       for (let i = 0; i < n; i++) {
         // A fatia i fica centrada no ângulo i * fatia, medido a partir do topo.
-        const ini = -Math.PI / 2 + i * fatia - fatia / 2;
+        const ini = r.base + i * fatia - fatia / 2;
         ctx.beginPath(); ctx.moveTo(0, 0); ctx.arc(0, 0, raio, ini, ini + fatia); ctx.closePath();
         ctx.fillStyle = CORES[i % CORES.length];
         if (n % CORES.length === 1 && i === n - 1) ctx.fillStyle = CORES[3]; // evita duas fatias vizinhas iguais
         ctx.fill();
-        ctx.lineWidth = 3; ctx.strokeStyle = "rgba(27,20,64,.55)"; ctx.stroke();
-        // Texto ao longo do raio.
+        ctx.lineWidth = 3 * k; ctx.strokeStyle = "rgba(27,20,64,.55)"; ctx.stroke();
+        // Texto ao longo do raio (nas roletas de lado, o texto da metade esquerda é virado para não ficar de cabeça para baixo).
         ctx.save();
-        ctx.rotate(ini + fatia / 2);
-        ctx.textAlign = "right"; ctx.textBaseline = "middle";
+        const meio = ini + fatia / 2, deCabeca = r.virar && Math.cos(meio + r.angulo) < 0;
+        ctx.rotate(deCabeca ? meio + Math.PI : meio);
+        ctx.textAlign = deCabeca ? "left" : "right"; ctx.textBaseline = "middle";
         ctx.fillStyle = "#1b1440";
         const texto = r.itens[i];
-        let tamanho = n > 20 ? 30 : n > 12 ? 30 : 34;
+        let tamanho = (n > 12 ? 30 : 34) * k;
         ctx.font = `900 ${tamanho}px "Segoe UI", system-ui, sans-serif`;
         const maximo = raio * 0.62;
-        while (ctx.measureText(texto).width > maximo && tamanho > 12) {
-          tamanho -= 1; ctx.font = `900 ${tamanho}px "Segoe UI", system-ui, sans-serif`;
+        while (ctx.measureText(texto).width > maximo && tamanho > 12 * k) {
+          tamanho -= k; ctx.font = `900 ${tamanho}px "Segoe UI", system-ui, sans-serif`;
         }
-        ctx.fillText(texto, raio - 18, 0);
+        ctx.fillText(texto, deCabeca ? -(raio - 18 * k) : raio - 18 * k, 0);
         ctx.restore();
       }
       ctx.restore();
       // Centro.
       ctx.beginPath(); ctx.arc(c, c, raio * 0.17, 0, Math.PI * 2);
       ctx.fillStyle = "#1b1440"; ctx.fill();
-      ctx.lineWidth = 6; ctx.strokeStyle = "#ffc93c"; ctx.stroke();
+      ctx.lineWidth = 6 * k; ctx.strokeStyle = "#ffc93c"; ctx.stroke();
       ctx.beginPath(); ctx.arc(c, c, raio, 0, Math.PI * 2);
-      ctx.lineWidth = 8; ctx.strokeStyle = "#fff8ec"; ctx.stroke();
+      ctx.lineWidth = 8 * k; ctx.strokeStyle = "#fff8ec"; ctx.stroke();
     };
     // Gira até a fatia `alvo` ficar sob o ponteiro (no topo).
     r.girar = function (alvo, duracao, aoPassar) {
@@ -562,18 +608,43 @@
     for (let i = v.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [v[i], v[j]] = [v[j], v[i]]; }
     return v;
   }
-  function lerAlunos() {
-    const vistos = new Set(), lista = [];
-    for (const linha of $("alunos").value.split(/\r?\n/)) {
-      const nome = linha.replace(/\s+/g, " ").trim();
-      if (nome && !vistos.has(nome.toLowerCase())) { vistos.add(nome.toLowerCase()); lista.push(nome); }
-    }
-    return lista;
-  }
+  // ----- Inscrição dos participantes, um por um -----
+  let inscritos = [];
+  const turmaSalva = () => (config.alunos || "").split(/\r?\n/).map((n) => n.trim()).filter(Boolean);
+  function lerAlunos() { return inscritos.slice(); }
   function contarAlunos() {
-    const n = lerAlunos().length;
-    $("conta-alunos").textContent = n === 0 ? "Nenhum aluno ainda. São precisos pelo menos 2."
-      : n === 1 ? "1 aluno. São precisos pelo menos 2." : `${n} alunos na lista.`;
+    const n = inscritos.length;
+    $("conta-alunos").textContent = n === 0 ? "" : n === 1 ? "1 participante" : `${n} participantes`;
+    const salva = turmaSalva();
+    $("carregar-turma").hidden = n > 0 || salva.length === 0;
+    $("carregar-turma").textContent = `Usar a turma anterior (${salva.length})`;
+    $("limpar-lista").hidden = n === 0;
+  }
+  function desenharInscritos(novo) {
+    const caixa = $("lista-insc"); caixa.innerHTML = "";
+    inscritos.forEach((nome, i) => {
+      const chip = document.createElement("span"); chip.className = "insc-nome" + (nome === novo ? " novo" : "");
+      const t = document.createElement("span"); t.textContent = nome;
+      const x = document.createElement("button"); x.type = "button"; x.textContent = "×"; x.setAttribute("aria-label", "Tirar " + nome);
+      x.addEventListener("click", () => { inscritos.splice(i, 1); desenharInscritos(); });
+      chip.append(t, x); caixa.appendChild(chip);
+    });
+    contarAlunos();
+  }
+  function inscrever(nome) {
+    nome = nome.replace(/\s+/g, " ").trim();
+    if (!nome) return false;
+    if (inscritos.some((n) => n.toLowerCase() === nome.toLowerCase())) { $("erro-elim").textContent = `${nome} já está na lista.`; return false; }
+    inscritos.push(nome); $("erro-elim").textContent = "";
+    tom(660, 0.09, "triangle", 0.18); setTimeout(() => tom(990, 0.12, "triangle", 0.18), 90);
+    desenharInscritos(nome);
+    return true;
+  }
+  function mostrarInscricao() {
+    document.body.classList.add("inscrevendo");
+    $("elim-config").hidden = false;
+    desenharInscritos();
+    setTimeout(() => $("novo-aluno").focus(), 50);
   }
   function mmss(seg) { seg = Math.max(0, Math.ceil(seg)); return Math.floor(seg / 60) + ":" + String(seg % 60).padStart(2, "0"); }
 
@@ -585,13 +656,12 @@
     document.body.classList.toggle("elim", modo === "elim");
     $("modo-livre").setAttribute("aria-pressed", String(modo === "livre"));
     $("modo-elim").setAttribute("aria-pressed", String(modo === "elim"));
-    $("subtitulo").textContent = modo === "elim"
-      ? "Quem não falar a tempo está fora. O último que sobrar é o campeão!"
-      : "Gire as roletas e diga algo da categoria com a letra sorteada antes de o tempo acabar.";
+    $("subtitulo").hidden = modo === "elim";
     pararCronometro();
     $("girar").hidden = modo === "elim"; $("girar").disabled = false;
     $("config").hidden = modo === "elim";
     $("elim-config").hidden = modo !== "elim";
+    if (modo === "elim") { inscritos = []; mostrarInscricao(); } else document.body.classList.remove("inscrevendo");
     $("historico").textContent = "";
     $("letra").textContent = "?"; $("descricao").textContent = "";
     $("categoria").textContent = modo === "elim" ? "Monte a lista e comece" : "Clique em Girar";
@@ -599,8 +669,21 @@
     mostrarTempo(modo === "elim" ? config.tempoElim : config.tempo, modo === "elim" ? config.tempoElim : config.tempo);
   }
 
+  // No jogo, as roletas ficam nas laterais com a seta virada para dentro (em telas largas).
+  function posicionarRoletas() {
+    const lados = document.body.classList.contains("jogando") && matchMedia("(min-width: 901px)").matches;
+    rodaLetras.base = lados ? 0 : -Math.PI / 2;
+    rodaCategorias.base = lados ? Math.PI : -Math.PI / 2;
+    rodaLetras.virar = rodaCategorias.virar = lados;
+    rodaLetras.desenhar(); rodaCategorias.desenhar();
+  }
+  window.addEventListener("resize", posicionarRoletas);
+
   function mostrarControlesJogo(ativo) {
     $("elim-config").hidden = ativo || modo !== "elim";
+    document.body.classList.toggle("jogando", ativo);
+    document.body.classList.toggle("inscrevendo", !ativo && modo === "elim");
+    posicionarRoletas();
     ["falou", "pausar", "encerrar"].forEach((id) => { $(id).hidden = !ativo; });
     $("desfazer").hidden = true;
     $("vez").hidden = !ativo; $("info-rodada").hidden = !ativo; $("participantes").hidden = !ativo;
@@ -623,8 +706,9 @@
 
   function comecarEliminacao(lista) {
     const alunos = lista || lerAlunos();
-    if (alunos.length < 2) { $("erro-elim").textContent = "Escreva o nome de pelo menos 2 alunos."; $("alunos").focus(); return; }
+    if (alunos.length < 2) { $("erro-elim").textContent = "Coloque pelo menos 2 participantes."; $("novo-aluno").focus(); return; }
     $("erro-elim").textContent = "";
+    config.alunos = alunos.join("\n"); salvar();
     $("campeao").hidden = true;
     jogo = { todos: alunos.slice(), ativos: alunos.slice(), ordem: [], pos: 0, rodada: 0, rodadaRestante: RODADA_SEG,
              vezRestante: 0, pausaRestante: 0, fase: "girando", pausado: false, ultimoEliminado: null, eliminacoes: 0 };
@@ -740,11 +824,23 @@
     $("mensagem").className = "mensagem"; $("mensagem").textContent = "";
     $("categoria").textContent = "Monte a lista e comece"; $("letra").textContent = "?"; $("descricao").textContent = "";
     mostrarTempo(config.tempoElim, config.tempoElim);
+    if (modo === "elim") mostrarInscricao();
   }
 
   $("modo-livre").addEventListener("click", () => trocarModo("livre"));
   $("modo-elim").addEventListener("click", () => trocarModo("elim"));
-  $("alunos").addEventListener("input", () => { config.alunos = $("alunos").value; salvar(); contarAlunos(); $("erro-elim").textContent = ""; });
+  $("form-aluno").addEventListener("submit", (e) => {
+    e.preventDefault();
+    if (inscrever($("novo-aluno").value)) $("novo-aluno").value = "";
+    $("novo-aluno").focus();
+  });
+  $("novo-aluno").addEventListener("input", () => { $("erro-elim").textContent = ""; });
+  $("carregar-turma").addEventListener("click", () => {
+    turmaSalva().forEach((nome, i) => setTimeout(() => inscrever(nome), i * 180));
+  });
+  $("limpar-lista").addEventListener("click", () => {
+    if (confirm("Tirar todos os participantes da lista?")) { inscritos = []; desenharInscritos(); $("novo-aluno").focus(); }
+  });
   $("tempo-elim").addEventListener("click", (e) => {
     const b = e.target.closest("button[data-s]"); if (!b) return;
     config.tempoElim = Number(b.dataset.s); salvar(); marcarTempoElim();
@@ -818,7 +914,7 @@
     $("som").textContent = "Som: " + (config.som ? "ligado" : "desligado");
     $("som").setAttribute("aria-pressed", String(config.som));
     montarLetras(); atualizarRoletas(); mostrarTempo(config.tempo, config.tempo);
-    $("alunos").value = config.alunos || ""; contarAlunos(); marcarTempoElim();
+    contarAlunos(); marcarTempoElim();
   }
   preencher();
 })();
