@@ -19,7 +19,8 @@ de categorias. Ao clicar em **Girar**, as duas giram juntas e o estudante tem
 - O professor clica em **✔ Falou!** (ou aperta Espaço) quando o aluno acerta. Se o tempo acabar sem o clique, o aluno é eliminado.
 - Depois que todos falaram, as roletas giram de novo e a disputa recomeça com quem sobrou, em nova ordem.
 - Botões para pausar e para devolver o último eliminado (em caso de clique esquecido).
-- Quando sobra um só, aparece a tela do campeão.
+- Se ninguém da rodada acertar, todos os que estavam nela voltam e as roletas giram de novo.
+- O campeão precisa acertar a última rodada: quando só ele acerta, aparece a tela do campeão.
 
 As instruções ficam em `como-jogar.html`, aberta pelo botão **Como jogar**.
 

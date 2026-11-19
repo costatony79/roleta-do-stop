@@ -707,7 +707,7 @@
     $("erro-elim").textContent = "";
     config.alunos = alunos.join("\n"); salvar();
     $("campeao").hidden = true;
-    jogo = { todos: alunos.slice(), ativos: alunos.slice(), ordem: [], pos: 0, rodada: 0,
+    jogo = { todos: alunos.slice(), ativos: alunos.slice(), ordem: [], pos: 0, rodada: 0, inicioRodada: [], acertaram: new Set(),
              vezRestante: 0, pausaRestante: 0, fase: "girando", pausado: false, ultimoEliminado: null, eliminacoes: 0 };
     mostrarControlesJogo(true);
     $("pausar").textContent = "Pausar";
@@ -716,11 +716,13 @@
     requestAnimationFrame(quadro);
   }
 
-  async function novaRodada() {
+  async function novaRodada(aviso) {
     jogo.rodada++; jogo.fase = "girando";
     jogo.ordem = embaralhar(jogo.ativos); jogo.pos = 0; jogo.ultimoEliminado = null;
+    jogo.inicioRodada = jogo.ativos.slice(); // quem começou esta rodada (volta se todos errarem)
+    jogo.acertaram = new Set();             // quem falou certo nesta rodada
     $("falou").disabled = true;
-    $("nome-vez").className = "nome-vez"; $("nome-vez").textContent = jogo.rodada === 1 ? "Girando as roletas…" : "Nova rodada!";
+    $("nome-vez").className = "nome-vez"; $("nome-vez").textContent = aviso || (jogo.rodada === 1 ? "Girando as roletas…" : "Nova rodada!");
     mostrarTempo(config.tempoElim, config.tempoElim);
     desenharParticipantes();
     const rodadaAtual = jogo.rodada, jogoAtual = jogo;
@@ -742,6 +744,7 @@
     if (!jogo || jogo.fase !== "turno" || jogo.pausado) return;
     tom(660, 0.1, "triangle", 0.2); setTimeout(() => tom(990, 0.16, "triangle", 0.2), 100);
     $("mensagem").className = "mensagem"; $("mensagem").textContent = "Boa! ✔";
+    jogo.acertaram.add(jogo.ordem[jogo.pos]);
     jogo.ultimoEliminado = null;
     jogo.pos++;
     entreVezes();
@@ -766,10 +769,20 @@
     desenharParticipantes();
   }
 
+  // A rodada só termina quando todos dela tiveram a sua vez.
+  //  - Ninguém acertou: todos os que estavam na rodada voltam e as roletas giram de novo.
+  //  - Só um acertou: ele é o campeão (respondeu certo a última rodada).
+  //  - Mais de um acertou: nova rodada só com eles.
   function proximaVez() {
-    if (jogo.ativos.length <= 1) { mostrarCampeao(); return; }
-    if (jogo.pos >= jogo.ordem.length) { novaRodada(); return; } // todos já falaram: nova combinação
-    iniciarVez();
+    if (jogo.pos < jogo.ordem.length) { iniciarVez(); return; }
+    if (jogo.acertaram.size === 0) {
+      jogo.ativos = jogo.inicioRodada.slice();
+      tom(330, 0.25, "triangle", 0.2); setTimeout(() => tom(440, 0.3, "triangle", 0.2), 220);
+      novaRodada("Ninguém acertou! Todos voltam.");
+      return;
+    }
+    if (jogo.ativos.length === 1) { mostrarCampeao(); return; }
+    novaRodada();
   }
 
   function quadro(agora) {
