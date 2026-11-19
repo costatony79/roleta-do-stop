@@ -298,7 +298,6 @@
   <div class="historico" id="historico"></div>
   <div class="info-rodada" id="info-rodada" hidden>
     <span>Rodada <b id="num-rodada">1</b></span>
-    <span>Tempo da rodada <b id="tempo-rodada">5:00</b></span>
     <span>Na disputa <b id="na-disputa">0</b></span>
   </div>
   <div class="participantes" id="participantes" hidden></div>
@@ -599,7 +598,6 @@
   });
 
   // ---------- Modo eliminação ----------
-  const RODADA_SEG = 5 * 60;          // cada rodada (uma combinação de letra e categoria) dura 5 minutos
   const PAUSA_ENTRE_VEZES = 1.4;      // segundos mostrando "Boa!" ou "Eliminado" antes do próximo nome
   let modo = "livre", jogo = null, ultimoQuadro = 0, ultimoSegundoVez = 0;
 
@@ -700,7 +698,6 @@
     }
     $("na-disputa").textContent = jogo.ativos.length;
     $("num-rodada").textContent = jogo.rodada;
-    $("tempo-rodada").textContent = mmss(jogo.rodadaRestante);
     $("desfazer").hidden = !jogo.ultimoEliminado || jogo.fase === "girando";
   }
 
@@ -710,7 +707,7 @@
     $("erro-elim").textContent = "";
     config.alunos = alunos.join("\n"); salvar();
     $("campeao").hidden = true;
-    jogo = { todos: alunos.slice(), ativos: alunos.slice(), ordem: [], pos: 0, rodada: 0, rodadaRestante: RODADA_SEG,
+    jogo = { todos: alunos.slice(), ativos: alunos.slice(), ordem: [], pos: 0, rodada: 0,
              vezRestante: 0, pausaRestante: 0, fase: "girando", pausado: false, ultimoEliminado: null, eliminacoes: 0 };
     mostrarControlesJogo(true);
     $("pausar").textContent = "Pausar";
@@ -720,7 +717,7 @@
   }
 
   async function novaRodada() {
-    jogo.rodada++; jogo.rodadaRestante = RODADA_SEG; jogo.fase = "girando";
+    jogo.rodada++; jogo.fase = "girando";
     jogo.ordem = embaralhar(jogo.ativos); jogo.pos = 0; jogo.ultimoEliminado = null;
     $("falou").disabled = true;
     $("nome-vez").className = "nome-vez"; $("nome-vez").textContent = jogo.rodada === 1 ? "Girando as roletas…" : "Nova rodada!";
@@ -771,8 +768,7 @@
 
   function proximaVez() {
     if (jogo.ativos.length <= 1) { mostrarCampeao(); return; }
-    if (jogo.rodadaRestante <= 0) { novaRodada(); return; }
-    if (jogo.pos >= jogo.ordem.length) { jogo.ordem = embaralhar(jogo.ativos); jogo.pos = 0; }
+    if (jogo.pos >= jogo.ordem.length) { novaRodada(); return; } // todos já falaram: nova combinação
     iniciarVez();
   }
 
@@ -780,8 +776,6 @@
     if (!jogo) return;
     const dt = Math.min(0.25, (agora - ultimoQuadro) / 1000); ultimoQuadro = agora;
     if (!jogo.pausado && jogo.fase !== "girando" && jogo.fase !== "fim") {
-      jogo.rodadaRestante = Math.max(0, jogo.rodadaRestante - dt);
-      $("tempo-rodada").textContent = mmss(jogo.rodadaRestante);
       if (jogo.fase === "turno") {
         jogo.vezRestante -= dt;
         mostrarTempo(Math.max(0, jogo.vezRestante), config.tempoElim);
